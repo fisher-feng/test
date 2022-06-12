@@ -1,14 +1,14 @@
 import React,{useState,useEffect,useRef} from "react";
 import './index.scss'
 let source = require('../../assert/flower.webm');
-const Video:React.FC<{maxVolume:number}> = ({maxVolume=300}) => {
+const Video:React.FC<{maxVolume:number}> = ({maxVolume}) => {
   const progress = useRef<HTMLDivElement|null>(null);
   const ball = useRef<HTMLDivElement|null>(null);
   const video = useRef<HTMLVideoElement|null>(null);
   const voice = useRef<HTMLDivElement|null>(null);
   const [progressHeight, setProgressHeight] = useState(maxVolume);
   const [isshowVoice,setIsshowVoice] = useState<boolean>(false);
-  const [ispause, setIspause] = useState<boolean>(true);
+  const [ismuted, setismuted] = useState<boolean>(false);
   const ballMouseDown = (event:any) => {
     let y0 = event.pageY;
     let y1 = event.pageY;
@@ -26,36 +26,46 @@ const Video:React.FC<{maxVolume:number}> = ({maxVolume=300}) => {
     document.onmouseup = function() {
       document.onmousemove = null;
     }
-}
-
+  }
+  const voiceMouseDown = (event: { pageY: number})=>{   
+    const y0 = progressHeight;
+    const top = voice.current?.offsetTop as number;    
+    const y1 = event.pageY - top -30;//这里要注意..
+    const diff = y1-y0;
+    setProgressHeight((value) => {
+      const result = value + diff;
+      if(result>maxVolume)return maxVolume;
+      if(result<0)return 0 ;
+      return result
+    })
+ }
  useEffect(()=>{
-   if(video.current?.volume||video.current?.volume ===0) {
+   if(video.current?.volume||video.current?.volume === 0) {
+     if(ismuted){
+      return
+     };//如果是点击了静音就不设值，用于保存上一次声音的值
      video.current.volume =(maxVolume- progressHeight)/maxVolume;
    } 
- }, [progressHeight])
-
+ }, [maxVolume, progressHeight])
+  useEffect(()=>{
+    if(ismuted){
+      setProgressHeight(maxVolume);
+    }else{
+      const volume = video.current?.volume as number;
+      console.log(volume*50);
+      setProgressHeight(maxVolume- volume*maxVolume);
+    }
+  },[ismuted])
  return (
   <div style={{width:'100%',height:"100%"}} className = 'contain'>
-    <video width='100%' ref = {video} src= {source} controls></video>
+    <video width='100%' ref = {video} src= {source} controls muted ={ismuted}></video>
     <div className="voice-contain" 
         onMouseEnter = {()=>{setIsshowVoice(true)}} 
         onMouseLeave = {()=>{setIsshowVoice(false)}}
         ref = {voice}
         >
       {isshowVoice?<div className="voice-outside">
-        <div className ="voice"    onMouseDown = {(event)=>{   
-          const y0 = progressHeight;
-          const top = voice.current?.offsetTop as number;    
-           console.log('进来了',top,event.pageY);
-          const y1 = event.pageY - top -30;//这里要注意..
-          const diff = y1-y0;
-          setProgressHeight((value) => {
-            const result = value + diff;
-            if(result>maxVolume)return maxVolume;
-            if(result<0)return 0 ;
-            return result
-            })
-          }}>
+        <div className ="voice"    onMouseDown = {voiceMouseDown}>
           <div 
             className="progress"  
             ref={progress}
@@ -75,10 +85,9 @@ const Video:React.FC<{maxVolume:number}> = ({maxVolume=300}) => {
       <div className="icon" 
         style={{width:20,height:20,backgroundColor:'#ffff',position:'absolute',bottom:10}}
         onClick = {()=>{
-          video.current?.pause()
-          setIspause(!ispause);
+          setismuted(!ismuted);
         }} 
-        >ss</div>
+      >{ismuted?'静音':'有声音'}</div>
     </div>
   </div>)   
 }
