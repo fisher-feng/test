@@ -19,16 +19,19 @@ const Video:React.FC<{maxVolume:number}> = ({maxVolume}) => {
   
     setProgressHeight((value) => {
       const result = value + diff;
-      if(video.current?.volume){
-        if(result>maxVolume){
+      if(video.current?.volume!=undefined){
+        if(result>=maxVolume){
           video.current.volume = 0;
-          // return maxVolume;
+          setismuted(true);
+          return maxVolume;
         }else
-        if(result<0){
+        if(result<=0){
           video.current.volume = 1;
-          // return 0;
+          setismuted(false);
+          return 0;
         }else {
           video.current.volume = 1 - result/50;
+           setismuted(false);
         }
       }
       return value
@@ -51,18 +54,22 @@ const Video:React.FC<{maxVolume:number}> = ({maxVolume}) => {
     const y1 = event.pageY - top -30;//这里要注意..
     const diff = y1-y0;
     let result = progressHeight + diff;
-    if(video.current?.volume){
-      if(result>maxVolume){
+    if(video.current?.volume!=undefined){
+      if(result>=maxVolume){
         video.current.volume = 0;
+        setismuted(true);
         return
       };
-      if(result<0){
+      if(result<=0){
         video.current.volume = 1;
+        setismuted(false);
         return
       } 
+        setismuted(false);
       video.current.volume = 1-result/50;
     }
-   
+    console.log('sss');
+    
     // setProgressHeight((value) => {
     //   const result = value + diff;
     //   if(result>maxVolume)return maxVolume;
@@ -70,14 +77,11 @@ const Video:React.FC<{maxVolume:number}> = ({maxVolume}) => {
     //   return result
     // })
  }
- useEffect(()=>{
-  //  if(video.current?.volume||video.current?.volume === 0) {
-  //    if(ismuted){
-  //     return
-  //    };//如果是点击了静音就不设值，用于保存上一次声音的值
-  //    video.current.volume =(maxVolume- progressHeight)/maxVolume;
-  //  } 
- }, [maxVolume, progressHeight])
+//  useEffect(()=>{
+//    if(video.current?.volume||video.current?.volume === 0) {
+//      video.current.volume =(maxVolume- progressHeight)/maxVolume;
+//    } 
+//  }, [maxVolume, progressHeight])
   useEffect(()=>{
     if(ismuted){
       // setProgressHeight(maxVolume);
@@ -93,7 +97,7 @@ const Video:React.FC<{maxVolume:number}> = ({maxVolume}) => {
   },[ismuted])
  return (
   <div style={{width:'100%',height:"100%"}} className = 'contain'>
-    <video width='100%' ref = {video} src= {source} controls muted ={ismuted}
+    <video width='100%' ref = {video} src= {source} controls muted = {ismuted}
      onVolumeChange = {(e)=>{
       if(video.current?.muted){
         setProgressHeight(maxVolume);
@@ -101,7 +105,11 @@ const Video:React.FC<{maxVolume:number}> = ({maxVolume}) => {
       }else{
         const volume = video.current?.volume as number
         console.log('change',volume);
-        setismuted(false)
+        if(volume === maxVolume ){
+          setismuted(true)
+        }else{
+          setismuted(false)
+        }
         setProgressHeight(maxVolume - volume *50 )
       }
     }}></video>
@@ -131,7 +139,7 @@ const Video:React.FC<{maxVolume:number}> = ({maxVolume}) => {
       <div className="icon" 
         style={{width:20,height:20,backgroundColor:'#ffff',position:'absolute',bottom:10}}
         onClick = {()=>{
-          setismuted((value)=>!value);
+          setismuted(!ismuted);
         }} 
       >{ismuted?'静音':'有声音'}</div>
     </div>
